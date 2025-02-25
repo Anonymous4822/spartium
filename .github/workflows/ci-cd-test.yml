@@ -49,4 +49,4 @@ jobs:
       - name: Lancer un nouveau conteneur avec la dernière image
         run: |
           echo "🚀 Démarrage du conteneur avec la dernière version de l’image..."
-          docker run -d --name devops-app -p 3000:3000 fsociety7/devops-app:latest
+          docker run -p 3000:3000 fsociety7/devops-app:latest
