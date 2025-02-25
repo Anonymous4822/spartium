@@ -1,4 +1,4 @@
-name: CI/CD Pipeline Test
+name: Pipeline Docker pour Flask
 
 on:
   push:
@@ -6,28 +6,42 @@ on:
       - develop
 
 jobs:
-  build:
+  build-and-run:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout du code
+      - name: 🛎️ Checkout du code
         uses: actions/checkout@v4
 
-      - name: Build de l’image Docker
-        run: docker build -t devops-app .
+      - name: 🔍 Vérifier si l’image existe déjà localement
+        id: check-image
+        run: |
+          if docker image inspect mon-app:latest > /dev/null 2>&1; then
+            echo "IMAGE_EXISTS=true" >> $GITHUB_ENV
+            echo "✅ L'image mon-app:latest existe déjà."
+          else
+            echo "IMAGE_EXISTS=false" >> $GITHUB_ENV
+            echo "⚠️ L'image n'existe pas encore, elle va être construite."
+          fi
 
-      - name: Build de l’image Docker
-        run: docker build -t localhost:5000/devops-app:latest .
+      - name: 🔨 Construire l’image Docker (si nécessaire)
+        if: env.IMAGE_EXISTS == 'false'
+        run: |
+          echo "🚀 Construction de l'image Docker..."
+          docker build -t devops-app:latest .
 
-      - name: Pousser l’image vers le registre local
-        run: docker push localhost:5000/devops-app:latest
-
-      - name: Arrêter le conteneur en cours (si existe)
+      - name: 🛑 Arrêter l’ancien conteneur (s’il existe)
         continue-on-error: true
         run: docker stop devops-app || true
 
-      - name: Supprimer l’ancien conteneur (si existe)
+      - name: 🗑️ Supprimer l’ancien conteneur (s’il existe)
         continue-on-error: true
         run: docker rm devops-app || true
 
-      - name: Lancer un nouveau conteneur avec l’image locale
-        run: docker run -d --name devops-app -p 3000:3000 localhost:5000/devops:latest
+      - name: 🚀 Démarrer le nouveau conteneur
+        run: |
+          docker run -d --name devops-app -p 3000:3000 devops-app:latest
+          echo "✅ Conteneur lancé avec succès !"
+
+      - name: 🔎 Vérifier si le conteneur tourne bien
+        run: docker ps | grep devops-app
