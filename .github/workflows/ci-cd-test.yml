@@ -1,4 +1,4 @@
-name: CI/CD TEST Pipeline
+name: CI/CD Pipeline Test
 
 on:
   push:
@@ -12,31 +12,14 @@ jobs:
       - name: Checkout du code
         uses: actions/checkout@v4
 
-      - name: Vérifier si l'image existe sur Docker Hub
-        id: check-image
-        run: |
-          if docker manifest inspect fsociety7/devops-app:latest > /dev/null 2>&1; then
-            echo "IMAGE_EXISTS=true" >> $GITHUB_ENV
-            echo "✅ L'image existe déjà sur Docker Hub. Aucun build nécessaire."
-          else
-            echo "IMAGE_EXISTS=false" >> $GITHUB_ENV
-            echo "⚠️ L'image n'existe pas sur Docker Hub. Elle va être construite et poussée."
-          fi
+      - name: Build de l’image Docker
+        run: docker build -t devops-app .
 
-      - name: Construire l'image Docker (si nécessaire)
-        if: env.IMAGE_EXISTS == 'false'
-        run: |
-          echo "🔨 Construction de l'image..."
-          docker build -t fsociety7/devops-app:latest .
+      - name: Build de l’image Docker
+        run: docker build -t localhost:5000/devops-app:latest .
 
-      - name: Se connecter à Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-      - name: Pousser l'image sur Docker Hub (si nécessaire)
-        if: env.IMAGE_EXISTS == 'false'
-        run: |
-          echo "📤 Envoi de l'image vers Docker Hub..."
-          docker push fsociety7/devops-app:latest
+      - name: Pousser l’image vers le registre local
+        run: docker push localhost:5000/devops-app:latest
 
       - name: Arrêter le conteneur en cours (si existe)
         continue-on-error: true
@@ -46,7 +29,5 @@ jobs:
         continue-on-error: true
         run: docker rm devops-app || true
 
-      - name: Lancer un nouveau conteneur avec la dernière image
-        run: |
-          echo "🚀 Démarrage du conteneur avec la dernière version de l’image..."
-          docker run -p 3000:8080 fsociety7/devops-app:latest
+      - name: Lancer un nouveau conteneur avec l’image locale
+        run: docker run -d --name devops-app -p 3000:3000 localhost:5000/devops:latest
