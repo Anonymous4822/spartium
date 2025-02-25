@@ -9,7 +9,7 @@ COPY app.py /app/app.py
 WORKDIR /app
 
 # Expose le port 3000 pour Flask
-EXPOSE 3001
+EXPOSE 3000
 
 # Commande par dfaut
 CMD ["python", "app.py"]
