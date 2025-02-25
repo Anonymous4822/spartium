@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - feature/dockerization
-      - develop
 
 jobs:
   build:
